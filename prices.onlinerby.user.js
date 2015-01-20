@@ -70,9 +70,14 @@
             }
             var exponent = Math.pow(10,decimal_points);
             var num = Math.round((number * exponent)).toString();
-            return num.slice(0,-1*decimal_points) + "." + num.slice(-1*decimal_points)
+            
+            var numSlice = num.slice(0,-1*decimal_points);
+            if (numSlice == "")
+                numSlice = 0;
+            
+            num = numSlice + "." + num.slice(-1*decimal_points);
+            return num.replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 ');
         }
-
 
         function hkDetectUsd()
         {
