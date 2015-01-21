@@ -90,7 +90,7 @@
         function hkGetFormattedUsdPrice(rub)
         {
             var usd = rub / hkUsd;
-            var round = (usd > hkCentsLimit) ? 0 : 2;
+            var round = (usd >= hkCentsLimit) ? 0 : 2;
             usd = hkRound(usd, round);
             return hkFormat(usd);
         }
