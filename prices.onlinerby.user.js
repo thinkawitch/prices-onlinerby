@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.0
+// @version     1.0.1
 // @include     http://ab.onliner.by/*
 // @include     http://mb.onliner.by/*
 // @include     http://baraholka.onliner.by/*
 // @author      Andrew Sinkevitch
 // @description Add prices in USD
+// @grant       none
 // ==/UserScript==
 
 
@@ -34,13 +35,17 @@
             head.appendChild(style);
         }
 
-        addGlobalStyle('.adverts-table .cost .hk-usd { margin:5px 0 0 0; color:#5a9300; font-weight:bold; font-size:16px; font-family:Arial,Helvetica; }');
-        addGlobalStyle('.autoba-hd-details .hk-usd { margin:3px 0 0 10px; color:#5a9300; font-weight:bold; font-size:18px; font-family:Arial,Helvetica; }');
-
-        addGlobalStyle('.ba-tbl-list__table .cost .hk-usd { margin:5px 0 0 0; color:#5a9300; font-weight:bold; font-size:1em; font-family:Arial,Helvetica; }');
-        addGlobalStyle('.b-ba-topicdet .hk-usd { margin:3px 0 0 10px; color:#5a9300; font-weight:bold; font-size:18px; font-family:Arial,Helvetica; }');
+        var css = '\
+            .hk-usd { color:#5a9300; font-weight:bold; font-family:Arial,Helvetica; } \
+            .adverts-table .cost .hk-usd { margin:5px 0 0 0; font-size:16px; } \
+            .autoba-hd-details .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
+            .ba-tbl-list__table .cost .hk-usd { margin:5px 0 0 0; font-size:1em; } \
+            .b-ba-topicdet .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
+        ';
+        addGlobalStyle(css);
 
         var hkUsd = 15000;
+        var hkCentsLimit = 500;
 
         function hkGetIntegerNumber(str, separator)
         {
@@ -70,20 +75,31 @@
             }
             var exponent = Math.pow(10,decimal_points);
             var num = Math.round((number * exponent)).toString();
-            
+
             var numSlice = num.slice(0,-1*decimal_points);
-            if (numSlice == "")
-                numSlice = 0;
+            if (numSlice == "") numSlice = 0;
             
-            num = numSlice + "." + num.slice(-1*decimal_points);
-            return num.replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 ');
+            return numSlice + "." + num.slice(-1*decimal_points);
+        }
+
+        function hkFormat(number)
+        {
+            return String(number).replace(/(\d)(?=(\d\d\d)+([^\d]|$))/g, '$1 ');
+        }
+
+        function hkGetFormattedUsdPrice(rub)
+        {
+            var usd = rub / hkUsd;
+            var round = (usd > hkCentsLimit) ? 0 : 2;
+            usd = hkRound(usd, round);
+            return hkFormat(usd);
         }
 
         function hkDetectUsd()
         {
             var usd = $('.top-informer-currency span').text();
             usd = hkGetIntegerNumber(usd);
-            window.console.log('detected usd', usd);
+            //window.console.log('detected usd', usd);
             if (usd > 10000) hkUsd = usd;
         }
 
@@ -98,10 +114,20 @@
                 rub = hkGetIntegerNumber(rub);
                 if (isNaN(rub)) return;
 
-                var usd = hkRound(rub / hkUsd, 2);
-                //window.console.log('rub', rub, 'usd', usd);
-
+                var usd = hkGetFormattedUsdPrice(rub);
                 $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+            });
+        }
+
+        function hkUpdatePriceSelectInAB()
+        {
+            $('.autoba-filters-single select[name="min-price"] option, .autoba-filters-single select[name="max-price"] option').each(function(idx, el)
+            {
+                var rub = parseInt(el.value);
+                if (isNaN(rub)) return;
+
+                var usd = hkGetFormattedUsdPrice(rub);
+                $(el).text($(this).text() + ' ($ ' + usd + ')');
             });
         }
 
@@ -111,8 +137,7 @@
             rub = hkGetIntegerNumber(rub);
             if (isNaN(rub)) return;
 
-            var usd = hkRound(rub / hkUsd, 2);
-            //window.console.log('rub', rub, 'usd', usd);
+            var usd = hkGetFormattedUsdPrice(rub);
             $('.autoba-hd-details').append('<div class="hk-usd">$ ' + usd + '</div>');
         }
 
@@ -128,9 +153,7 @@
                 rub = hkGetIntegerNumber(rub);
                 if (isNaN(rub)) return;
 
-                var usd = hkRound(rub / hkUsd, 2);
-                //window.console.log('rub', rub, 'usd', usd);
-
+                var usd = hkGetFormattedUsdPrice(rub);
                 $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
             });
         }
@@ -141,8 +164,7 @@
             rub = hkGetIntegerNumber(rub);
             if (isNaN(rub)) return;
 
-            var usd = hkRound(rub / hkUsd, 2);
-            //window.console.log('rub', rub, 'usd', usd);
+            var usd = hkGetFormattedUsdPrice(rub);
             $('.b-ba-topicdet').append('<div class="hk-usd">$ ' + usd + '</div>');
         }
 
@@ -151,6 +173,7 @@
 
         hkUpdateAdvertPriceInAB();
         setInterval(hkUpdateTablePricesInAB, 4000);
+        hkUpdatePriceSelectInAB();
 
         hkUpdateAdvertPriceInBaraholka();
         hkUpdateTablePricesInBaraholka();
