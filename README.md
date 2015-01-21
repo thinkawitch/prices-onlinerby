@@ -7,7 +7,7 @@ Userscript для отображения дополнительной цены �
 Как установить:
 -------------
 
-**Для Firefox** - Установить дополнение Greasemonkey и перезагрузить броузер. Затем перетащить на окно броузера файл [prices.onlinerby.user.js](https://raw.githubusercontent.com/thinkawitch/prices-onlinerby/master/prices.onlinerby.user.js)
+**Для Firefox** - Установить дополнение Greasemonkey и перезагрузить броузер. Затем перетащить на окно броузера файл (или просто кликнуть на него) [prices.onlinerby.user.js](https://raw.githubusercontent.com/thinkawitch/prices-onlinerby/master/prices.onlinerby.user.js)
 и подтвердить установку.
 
 **Для Opera** - Установить дополнение Violent monkey и перезагрузить броузер. Затем кликнуть на файл [prices.onlinerby.user.js](https://raw.githubusercontent.com/thinkawitch/prices-onlinerby/master/prices.onlinerby.user.js)
