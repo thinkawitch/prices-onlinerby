@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.0.1
+// @version     1.1
 // @include     http://ab.onliner.by/*
 // @include     http://mb.onliner.by/*
 // @include     http://baraholka.onliner.by/*
+// @include     http://catalog.onliner.by/*
 // @author      Andrew Sinkevitch
 // @description Add prices in USD
 // @grant       none
@@ -41,10 +42,13 @@
             .autoba-hd-details .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
             .ba-tbl-list__table .cost .hk-usd { margin:5px 0 0 0; font-size:1em; } \
             .b-ba-topicdet .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
+            .poffers .hk-usd { margin:3px 0 5px 0; font-size:13px; } \
+            .pgdescr .hk-usd { font-family: Verdana,​Geneva,​Arial,​Helvetica,​sans-serif; } \
+            .b-offers-desc__info-price .hk-usd { margin:0 0 20px 0; } \
         ';
         addGlobalStyle(css);
 
-        var hkUsd = 15000;
+        var hkUsd = 15500;
         var hkCentsLimit = 500;
 
         function hkGetIntegerNumber(str, separator)
@@ -99,7 +103,6 @@
         {
             var usd = $('.top-informer-currency span').text();
             usd = hkGetIntegerNumber(usd);
-            //window.console.log('detected usd', usd);
             if (usd > 10000) hkUsd = usd;
         }
 
@@ -168,6 +171,60 @@
             $('.b-ba-topicdet').append('<div class="hk-usd">$ ' + usd + '</div>');
         }
 
+        function hkAddRangePriceCatalog(selRub)
+        {
+            var line = selRub.text();
+            var parts = line.split(/[–-]/);
+            if (parts.length > 1)
+            {
+                var rub1 = hkGetIntegerNumber(parts[0]);
+                var rub2 = hkGetIntegerNumber(parts[1]);
+                if (isNaN(rub1) || isNaN(rub2)) return;
+
+                var usd1 = hkGetFormattedUsdPrice(rub1);
+                var usd2 = hkGetFormattedUsdPrice(rub2);
+                selRub.after('<div class="hk-usd">$ ' + usd1 + ' - $ ' + usd2 + '</div>');
+            }
+            else
+            {
+                var rub = hkGetIntegerNumber(line);
+                if (isNaN(rub)) return;
+
+                var usd = hkGetFormattedUsdPrice(rub);
+                selRub.after('<div class="hk-usd">$ ' + usd + '</div>');
+            }
+        }
+
+        function hkUpdateTablePricesInCatalog()
+        {
+            //list
+            $('td.poffers').each(function(idx, el)
+            {
+                var selUsd = $(el).find('.hk-usd');
+                if (selUsd.length > 0) return;
+
+                var selRub = $(el).find('.pprice_byr');
+                hkAddRangePriceCatalog(selRub);
+            });
+
+            //gallery
+            $('td.pgdescr').each(function(idx, el)
+            {
+                var selUsd = $(el).find('.hk-usd');
+                if (selUsd.length > 0) return;
+
+                var selRub = $(el).find('.pgprice a');
+                hkAddRangePriceCatalog(selRub);
+            });
+        }
+
+        function hkUpdateAdvertPriceInCatalog()
+        {
+            var selRub = $('.b-offers-desc__info-sub a').first();
+            hkAddRangePriceCatalog(selRub);
+        }
+
+
         // add prices
         hkDetectUsd();
 
@@ -177,6 +234,9 @@
 
         hkUpdateAdvertPriceInBaraholka();
         hkUpdateTablePricesInBaraholka();
+
+        hkUpdateTablePricesInCatalog();
+        hkUpdateAdvertPriceInCatalog();
     }
 
     var execute = function (body) {
