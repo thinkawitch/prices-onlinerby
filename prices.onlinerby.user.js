@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.1
+// @version     1.1.1
 // @include     http://ab.onliner.by/*
 // @include     http://mb.onliner.by/*
 // @include     http://baraholka.onliner.by/*
@@ -224,19 +224,24 @@
             hkAddRangePriceCatalog(selRub);
         }
 
+        setTimeout(function(){
 
-        // add prices
-        hkDetectUsd();
+            hkDetectUsd();
+            //console.log('detected usd', hkUsd);
 
-        hkUpdateAdvertPriceInAB();
-        setInterval(hkUpdateTablePricesInAB, 4000);
-        hkUpdatePriceSelectInAB();
+            hkUpdateAdvertPriceInAB();
+            setInterval(hkUpdateTablePricesInAB, 3000);
+            hkUpdatePriceSelectInAB();
 
-        hkUpdateAdvertPriceInBaraholka();
-        hkUpdateTablePricesInBaraholka();
+            hkUpdateAdvertPriceInBaraholka();
+            hkUpdateTablePricesInBaraholka();
 
-        hkUpdateTablePricesInCatalog();
-        hkUpdateAdvertPriceInCatalog();
+            hkUpdateTablePricesInCatalog();
+            hkUpdateAdvertPriceInCatalog();
+
+        }, 1000);
+
+
     }
 
     var execute = function (body) {
