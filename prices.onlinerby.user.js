@@ -1,9 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.1.1
-// @include     http://ab.onliner.by/*
-// @include     http://mb.onliner.by/*
+// @version     1.2
 // @include     http://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
 // @author      Andrew Sinkevitch
@@ -37,14 +35,12 @@
         }
 
         var css = '\
-            .hk-usd { color:#5a9300; font-weight:bold; font-family:Arial,Helvetica; } \
-            .adverts-table .cost .hk-usd { margin:5px 0 0 0; font-size:16px; } \
-            .autoba-hd-details .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
-            .ba-tbl-list__table .cost .hk-usd { margin:5px 0 0 0; font-size:1em; } \
+            .hk-usd { color:#5a9300; font-weight:bold; font-family:Arial,Helvetica;  margin:5px 0; } \
+            .ba-tbl-list__table .cost .hk-usd { font-size:1em; } \
             .b-ba-topicdet .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
-            .poffers .hk-usd { margin:3px 0 5px 0; font-size:13px; } \
-            .pgdescr .hk-usd { font-family: Verdana,​Geneva,​Arial,​Helvetica,​sans-serif; } \
-            .b-offers-desc__info-price .hk-usd { margin:0 0 20px 0; } \
+            .b-offers-desc__info-price a { margin-bottom:0 !important; } \
+            .b-offers-desc__info-price .hk-usd { margin:20px 0; } \
+            .schema-product__price .hk-usd { } \
         ';
         addGlobalStyle(css);
 
@@ -106,45 +102,6 @@
             if (usd > 10000) hkUsd = usd;
         }
 
-        function hkUpdateTablePricesInAB()
-        {
-            $('.adverts-table .cost').each(function(idx, el)
-            {
-                var selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
-
-                var rub = $(el).find('.cost-i strong').text();
-                rub = hkGetIntegerNumber(rub);
-                if (isNaN(rub)) return;
-
-                var usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
-            });
-        }
-
-        function hkUpdatePriceSelectInAB()
-        {
-            $('.autoba-filters-single select[name="min-price"] option, .autoba-filters-single select[name="max-price"] option').each(function(idx, el)
-            {
-                var rub = parseInt(el.value);
-                if (isNaN(rub)) return;
-
-                var usd = hkGetFormattedUsdPrice(rub);
-                $(el).text($(this).text() + ' ($ ' + usd + ')');
-            });
-        }
-
-        function hkUpdateAdvertPriceInAB()
-        {
-            var rub = $('.autoba-hd-details .cost strong').first().text();
-            rub = hkGetIntegerNumber(rub);
-            if (isNaN(rub)) return;
-
-            var usd = hkGetFormattedUsdPrice(rub);
-            $('.autoba-hd-details').append('<div class="hk-usd">$ ' + usd + '</div>');
-        }
-
-
         function hkUpdateTablePricesInBaraholka()
         {
             $('.ba-tbl-list__table .cost').each(function(idx, el)
@@ -197,31 +154,67 @@
 
         function hkUpdateTablePricesInCatalog()
         {
-            //list
-            $('td.poffers').each(function(idx, el)
+            $('.schema-product__group .schema-product__price').each(function(idx, el)
             {
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var selRub = $(el).find('.pprice_byr');
-                hkAddRangePriceCatalog(selRub);
-            });
+                var rub = $(el).find('span').text();
+                rub = hkGetIntegerNumber(rub);
+                //console.log('rub', rub);
+                if (isNaN(rub)) return;
 
-            //gallery
-            $('td.pgdescr').each(function(idx, el)
-            {
-                var selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
-
-                var selRub = $(el).find('.pgprice a');
-                hkAddRangePriceCatalog(selRub);
+                var usd = hkGetFormattedUsdPrice(rub);
+                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
             });
         }
 
         function hkUpdateAdvertPriceInCatalog()
         {
             var selRub = $('.b-offers-desc__info-sub a').first();
-            hkAddRangePriceCatalog(selRub);
+            if (selRub.length > 0)
+            {
+                hkAddRangePriceCatalog(selRub);
+            }
+            else
+            {
+                //compare prices
+                var selRub = $('.b-offers-desc__info-sub');
+                hkAddRangePriceCatalog(selRub);
+            }
+
+
+            //side panel
+            $('.product-aside__price').each(function(idx, el)
+            {
+                var selUsd = $(el).find('.hk-usd');
+                if (selUsd.length > 0) return;
+
+                var rub = $(el).find('span').text();
+                rub = hkGetIntegerNumber(rub);
+                //console.log('rub', rub);
+                if (isNaN(rub)) return;
+
+                var usd = hkGetFormattedUsdPrice(rub);
+                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+            });
+
+
+            //different sellers
+            $('.b-offers-list-line-table__table p.price').each(function(idx, el)
+            {
+                var selUsd = $(el).find('.hk-usd');
+                if (selUsd.length > 0) return;
+
+                var rub = $(el).find('a').text();
+                rub = hkGetIntegerNumber(rub);
+                //console.log('rub', rub);
+                if (isNaN(rub)) return;
+
+                var usd = hkGetFormattedUsdPrice(rub);
+                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+            })
+
         }
 
         setTimeout(function(){
@@ -229,14 +222,10 @@
             hkDetectUsd();
             //console.log('detected usd', hkUsd);
 
-            hkUpdateAdvertPriceInAB();
-            setInterval(hkUpdateTablePricesInAB, 3000);
-            hkUpdatePriceSelectInAB();
-
             hkUpdateAdvertPriceInBaraholka();
             hkUpdateTablePricesInBaraholka();
 
-            hkUpdateTablePricesInCatalog();
+            setInterval(hkUpdateTablePricesInCatalog, 3000);
             hkUpdateAdvertPriceInCatalog();
 
         }, 1000);
