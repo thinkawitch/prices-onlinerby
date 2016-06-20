@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.2
+// @version     1.2.1
 // @include     http://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
 // @author      Andrew Sinkevitch
@@ -109,7 +109,7 @@
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var rub = $(el).find('big strong').text();
+                var rub = $(el).find('.price-secondary').text();
                 rub = hkGetIntegerNumber(rub);
                 if (isNaN(rub)) return;
 
@@ -120,7 +120,7 @@
 
         function hkUpdateAdvertPriceInBaraholka()
         {
-            var rub = $('.b-ba-topicdet .cost').first().text();
+            var rub = $('.b-ba-topicdet .price-secondary').first().text();
             rub = hkGetIntegerNumber(rub);
             if (isNaN(rub)) return;
 
