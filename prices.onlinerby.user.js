@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.2.1
+// @version     1.2.2
 // @include     http://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
 // @author      Andrew Sinkevitch
@@ -44,12 +44,12 @@
         ';
         addGlobalStyle(css);
 
-        var hkUsd = 15500;
+        var hkUsd = 2.00;
         var hkCentsLimit = 500;
 
-        function hkGetIntegerNumber(str, separator)
+        function hkGetNumber(str, separator)
         {
-            separator = separator || '.';
+            separator = separator || ',';
             str = str.replace(/руб./g, '');
 
             if (separator == '.')
@@ -62,7 +62,7 @@
                 str = str.replace(',', '.');
             }
 
-            return parseInt(str);
+            return parseFloat(str);
         }
 
         function hkRound(number, decimal_points)
@@ -98,8 +98,8 @@
         function hkDetectUsd()
         {
             var usd = $('.top-informer-currency span').text();
-            usd = hkGetIntegerNumber(usd);
-            if (usd > 10000) hkUsd = usd;
+            usd = hkGetNumber(usd);
+            if (usd > 1) hkUsd = usd;
         }
 
         function hkUpdateTablePricesInBaraholka()
@@ -109,8 +109,8 @@
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var rub = $(el).find('.price-secondary').text();
-                rub = hkGetIntegerNumber(rub);
+                var rub = $(el).find('.price-primary').text();
+                rub = hkGetNumber(rub);
                 if (isNaN(rub)) return;
 
                 var usd = hkGetFormattedUsdPrice(rub);
@@ -120,8 +120,8 @@
 
         function hkUpdateAdvertPriceInBaraholka()
         {
-            var rub = $('.b-ba-topicdet .price-secondary').first().text();
-            rub = hkGetIntegerNumber(rub);
+            var rub = $('.b-ba-topicdet .price-primary').first().text();
+            rub = hkGetNumber(rub);
             if (isNaN(rub)) return;
 
             var usd = hkGetFormattedUsdPrice(rub);
@@ -134,8 +134,8 @@
             var parts = line.split(/[–-]/);
             if (parts.length > 1)
             {
-                var rub1 = hkGetIntegerNumber(parts[0]);
-                var rub2 = hkGetIntegerNumber(parts[1]);
+                var rub1 = hkGetNumber(parts[0]);
+                var rub2 = hkGetNumber(parts[1]);
                 if (isNaN(rub1) || isNaN(rub2)) return;
 
                 var usd1 = hkGetFormattedUsdPrice(rub1);
@@ -144,7 +144,7 @@
             }
             else
             {
-                var rub = hkGetIntegerNumber(line);
+                var rub = hkGetNumber(line);
                 if (isNaN(rub)) return;
 
                 var usd = hkGetFormattedUsdPrice(rub);
@@ -154,13 +154,13 @@
 
         function hkUpdateTablePricesInCatalog()
         {
-            $('.schema-product__group .schema-product__price').each(function(idx, el)
+            $('.schema-product__group .schema-product__price-value_primary').each(function(idx, el)
             {
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
                 var rub = $(el).find('span').text();
-                rub = hkGetIntegerNumber(rub);
+                rub = hkGetNumber(rub);
                 //console.log('rub', rub);
                 if (isNaN(rub)) return;
 
@@ -171,15 +171,10 @@
 
         function hkUpdateAdvertPriceInCatalog()
         {
-            var selRub = $('.b-offers-desc__info-sub a').first();
+            // main top price range
+            var selRub = $('.b-offers-desc__info-price-value_primary').first();
             if (selRub.length > 0)
             {
-                hkAddRangePriceCatalog(selRub);
-            }
-            else
-            {
-                //compare prices
-                var selRub = $('.b-offers-desc__info-sub');
                 hkAddRangePriceCatalog(selRub);
             }
 
@@ -190,8 +185,8 @@
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var rub = $(el).find('span').text();
-                rub = hkGetIntegerNumber(rub);
+                var rub = $(el).find('span.product-aside__price--primary').text();
+                rub = hkGetNumber(rub);
                 //console.log('rub', rub);
                 if (isNaN(rub)) return;
 
@@ -201,13 +196,13 @@
 
 
             //different sellers
-            $('.b-offers-list-line-table__table p.price').each(function(idx, el)
+            $('.b-offers-list-line-table__table p.price-primary').each(function(idx, el)
             {
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
                 var rub = $(el).find('a').text();
-                rub = hkGetIntegerNumber(rub);
+                rub = hkGetNumber(rub);
                 //console.log('rub', rub);
                 if (isNaN(rub)) return;
 
