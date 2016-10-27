@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.2.2
+// @version     1.2.3
 // @include     http://baraholka.onliner.by/*
+// @include     https://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
+// @include     https://catalog.onliner.by/*
 // @author      Andrew Sinkevitch
 // @description Add prices in USD
 // @grant       none
