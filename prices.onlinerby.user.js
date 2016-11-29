@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.2.3
+// @version     1.2.4
 // @include     http://baraholka.onliner.by/*
 // @include     https://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
@@ -21,7 +21,7 @@
     }
 
     if (w.self != w.top) {
-        return;
+        //return; //stop working on baraholka advert page
     }
 
     function pricesOnliner()
@@ -38,7 +38,7 @@
 
         var css = '\
             .hk-usd { color:#5a9300; font-weight:bold; font-family:Arial,Helvetica;  margin:5px 0; } \
-            .ba-tbl-list__table .cost .hk-usd { font-size:1em; } \
+            .ba-tbl-list__table .cost .hk-usd { font-size:1.5em; } \
             .b-ba-topicdet .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
             .b-offers-desc__info-price a { margin-bottom:0 !important; } \
             .b-offers-desc__info-price .hk-usd { margin:20px 0; } \
