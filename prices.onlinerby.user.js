@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.2.5
+// @version     1.2.6
 // @include     http://baraholka.onliner.by/*
 // @include     https://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
@@ -31,22 +31,19 @@
             head = document.getElementsByTagName('head')[0];
             if (!head) { return; }
             style = document.createElement('style');
-            style.type = 'text/css';
             style.innerHTML = css;
             head.appendChild(style);
         }
 
         var css = '\
-            .hk-usd { color:#5a9300; font-weight:bold; font-family:Arial,Helvetica;  margin:5px 0; } \
-            .ba-tbl-list__table .cost .hk-usd { font-size:1.5em; } \
-            .b-ba-topicdet .hk-usd { margin:3px 0 0 10px; font-size:18px; } \
-            .b-offers-desc__info-price a { margin-bottom:0 !important; } \
-            .b-offers-desc__info-price .hk-usd { margin:20px 0; } \
-            .schema-product__price .hk-usd { } \
+            .hk-usd { color:#5a9300; font-weight:bold; margin:0.3rem 0; font-size: 1rem; line-height: 1rem; } \
+            .offers-description-configurations__price-value .hk-usd { margin: 0; font-size: 0.75rem; } \
+            .ba-tbl-list__table .cost .hk-usd { font-size:0.75rem; } \
+            .b-ba-topicdet .hk-usd { margin:0.5rem 0 0 10px; font-size:1.2rem; } \
         ';
         addGlobalStyle(css);
 
-        var hkUsd = 2.4462;
+        var hkUsd = 2.5676;
         var hkCentsLimit = 500;
 
         function hkGetNumber(str, separator)
@@ -80,7 +77,7 @@
 
             var numSlice = num.slice(0,-1*decimal_points);
             if (numSlice == "") numSlice = 0;
-            
+
             return numSlice + "." + num.slice(-1*decimal_points);
         }
 
@@ -175,21 +172,19 @@
 
         function hkUpdateAdvertPriceInCatalog()
         {
-            // main top price range
-            var selRub = $('.offers-description__price_primary .helpers_hide_tablet');
-            if (selRub.length > 0 && $('.offers-description__price_primary .hk-usd').length <= 0)
+            // main price
+            var selRub = $('.offers-description__price-group .offers-description__price_primary');
+            if (selRub.length > 0 && $('.offers-description__price-group .hk-usd').length <= 0)
             {
                 hkAddRangePriceCatalog(selRub);
             }
 
-
-            //side panel
-            $('.product-aside__price').each(function(idx, el)
-            {
+            // optional prices
+            $('.offers-description-configurations__price-value').each(function(idx, el) {
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var rub = $(el).find('.product-aside__price--primary span').text();
+                var rub = $(el).text();
                 rub = hkGetNumber(rub);
                 if (isNaN(rub)) return;
 
@@ -198,13 +193,27 @@
             });
 
 
-            //different sellers
-            $('.b-offers-list-line-table__table p.price-primary').each(function(idx, el)
+            // side panel
+            $('.product-aside__link').each(function(idx, el)
             {
                 var selUsd = $(el).find('.hk-usd');
                 if (selUsd.length > 0) return;
 
-                var rub = $(el).find('a span').text();
+                var rub = $(el).find('span').text();
+                rub = hkGetNumber(rub);
+                if (isNaN(rub)) return;
+
+                var usd = hkGetFormattedUsdPrice(rub);
+                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+            });
+
+            // different sellers
+            $('.offers-list__part_price .offers-list__description .offers-list__description').each(function(idx, el)
+            {
+                var selUsd = $(el).find('.hk-usd');
+                if (selUsd.length > 0) return;
+
+                var rub = $(el).text();
                 rub = hkGetNumber(rub);
                 //console.log('rub', rub);
                 if (isNaN(rub)) return;
