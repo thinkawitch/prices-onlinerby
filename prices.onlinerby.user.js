@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name        Prices in USD for onliner.by
 // @namespace   name.sinkevitch.andrew
-// @version     1.3.0
+// @version     1.4.0
 // @include     http://baraholka.onliner.by/*
 // @include     https://baraholka.onliner.by/*
 // @include     http://catalog.onliner.by/*
@@ -9,19 +9,23 @@
 // @author      Andrew Sinkevitch
 // @description Add prices in USD
 // @grant       none
+// @run-at      document-end
 // ==/UserScript==
 
 
 (function (window, undefined) {
-    let w;
+    //console.log('point 1')
+    // normalized window
+    let localWindow;
     if (typeof unsafeWindow != undefined) {
-        w = unsafeWindow
+        localWindow = unsafeWindow;
     } else {
-        w = window;
+        localWindow = window;
     }
 
-    if (w.self != w.top) {
-        //return; //stop working on baraholka advert page
+    // do not run in frames
+    if (localWindow.self != localWindow.top) {
+        return;
     }
 
     function pricesOnliner()
@@ -42,10 +46,21 @@
         ';
         addGlobalStyle(css);
 
+        function qs(selector, root) {
+            return (root || document).querySelector(selector);
+        }
+
+        function qsa(selector, root) {
+            return Array.prototype.slice.call(
+                (root || document).querySelectorAll(selector)
+            );
+        }
+
         let hkUsd = undefined;
         const hkCentsLimit = 500;
 
         function hkGetNumber(str, separator) {
+            if (typeof str !== 'string') return NaN;
             separator = separator || ',';
             str = str.replace(/руб./g, '');
 
@@ -59,20 +74,20 @@
             return parseFloat(str);
         }
 
-        function hkRound(number, decimal_points) {
-            if (!decimal_points) return Math.round(number);
+        function hkRound(number, points) {
+            if (!points) return Math.round(number);
             if (number == 0) {
                 let decimals = "";
-                for (let i=0; i < decimal_points; i++) decimals += "0";
+                for (let i=0; i < points; i++) decimals += "0";
                 return "0." + decimals;
             }
-            let exponent = Math.pow(10, decimal_points);
+            let exponent = Math.pow(10, points);
             let num = Math.round((number * exponent)).toString();
 
-            let numSlice = num.slice(0, -1 * decimal_points);
+            let numSlice = num.slice(0, -1 * points);
             if (numSlice == "") numSlice = 0;
 
-            return numSlice + "." + num.slice(-1 * decimal_points);
+            return numSlice + "." + num.slice(-1 * points);
         }
 
         function hkFormat(number) {
@@ -86,171 +101,149 @@
             return hkFormat(usd);
         }
 
+        function hkAppendUsd(el, rub) {
+            const usd = hkGetFormattedUsdPrice(rub);
+            el.insertAdjacentHTML('beforeend', `<div class="hk-usd">$ ${usd}</div>`);
+        }
+
         function hkDetectUsd() {
-            let usd = $('.b-top-navigation-informers__link span').text();
-            usd = hkGetNumber(usd);
+            const text = qs('.b-top-navigation-informers__link span')?.textContent;
+            if (typeof text !== 'string' || !text.includes('$')) return; // not loaded yet
+            const usd = hkGetNumber(text);
             if (usd > 1) hkUsd = usd;
-            console.log('hkDetectUsd', hkUsd);
         }
 
         function hkUpdateTablePricesInBaraholka() {
-            $('.ba-tbl-list__table .cost').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.ba-tbl-list__table .cost').forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).find('.price-primary').text();
+                let rub = qs('.price-primary', el)?.textContent
                 rub = hkGetNumber(rub);
                 if (isNaN(rub)) return;
 
-                let usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+                hkAppendUsd(el, rub);
             });
         }
 
         function hkUpdateAdvertPriceInBaraholka() {
-            let rub = $('.b-ba-topicdet .price-primary').first().text();
+            const el = qs('.b-ba-topicdet');
+            if (!el) return;
+
+            let rub = qs('.price-primary', el)?.textContent;
             rub = hkGetNumber(rub);
             if (isNaN(rub)) return;
 
-            let usd = hkGetFormattedUsdPrice(rub);
-            $('.b-ba-topicdet').append('<div class="hk-usd">$ ' + usd + '</div>');
-        }
-
-        function hkAddRangePriceCatalog(selRub) {
-            let line = selRub.text();
-            let parts = line.split(/[–-]/);
-            if (parts.length > 1) {
-                const rub1 = hkGetNumber(parts[0]);
-                const rub2 = hkGetNumber(parts[1]);
-                if (isNaN(rub1) || isNaN(rub2)) return;
-
-                const usd1 = hkGetFormattedUsdPrice(rub1);
-                const usd2 = hkGetFormattedUsdPrice(rub2);
-                selRub.after('<div class="hk-usd">$ ' + usd1 + ' - $ ' + usd2 + '</div>');
-            } else {
-                const rub = hkGetNumber(line);
-                if (isNaN(rub)) return;
-
-                const usd = hkGetFormattedUsdPrice(rub);
-                selRub.after('<div class="hk-usd">$ ' + usd + '</div>');
-            }
+            hkAppendUsd(el, rub);
         }
 
         function hkUpdateTablePricesInCatalog() {
-            $('.schema-product__group .schema-product__price-value_primary, ' +
-              '.schema-product__group .schema-product__price-value_additional, ' +
-              '.schema-product__group .schema-product__price-value_secondary').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.catalog-form__link span:not([class])'
+                + ' '
+                + ' '
+            ).forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).find('span').text();
-                rub = hkGetNumber(rub);
+                const rub = hkGetNumber(el?.textContent);
                 //console.log('rub', rub);
                 if (isNaN(rub)) return;
 
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+                hkAppendUsd(el, rub);
             });
         }
 
         function hkUpdateAdvertPriceInCatalog() {
-            // main price
-            const selRub = $('.offers-description__price-group .offers-description__price_primary');
-            if (selRub.length > 0 && $('.offers-description__price-group .hk-usd').length <= 0) {
-                hkAddRangePriceCatalog(selRub);
+            let elMain = qs('.offers-description__price_primary');
+            if (!elMain) elMain = qs('.offers-description__price_secondary');
+            if (elMain) {
+                const elMainUsd = qs('.hk-usd', elMain);
+                if (!elMainUsd) {
+                    let rubMain = qs('.js-description-price-link', elMain)?.textContent; // other pages
+                    if (!rubMain) rubMain = elMain?.textContent; // all sellers page
+                    rubMain = hkGetNumber(rubMain);
+                    if (!isNaN(rubMain)) {
+                        hkAppendUsd(elMain, rubMain);
+                    }
+                }
             }
 
-            // optional prices
-            $('.offers-description-configurations__price-value').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
-
-                let rub = $(el).text();
-                rub = hkGetNumber(rub);
-                if (isNaN(rub)) return;
-
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
-            });
-
-
             // side panel
-            $('.product-aside__link').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.product-aside__link.js-short-price-link').forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).find('span').text();
+                let rub = qs('span', el)?.textContent;
                 rub = hkGetNumber(rub);
                 if (isNaN(rub)) return;
 
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+                hkAppendUsd(el, rub);
             });
 
             // different sellers
-            $('.offers-list__part_price .offers-list__description .offers-list__description').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.offers-list__part_price .offers-list__description .offers-list__description').forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).text();
-                rub = hkGetNumber(rub);
-                //console.log('rub', rub);
+                const rub = hkGetNumber(el?.textContent);
                 if (isNaN(rub)) return;
 
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
-            })
-
+                hkAppendUsd(el, rub);
+            });
         }
 
         function hkUpdateTablePricesInCatalogUsed() {
-            $('#schema-second-offers .schema-product__price-group .schema-product__button').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.catalog-form__description .catalog-form__link_font-weight_bold').forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).find('strong').text();
-                rub = hkGetNumber(rub);
+                const rub = hkGetNumber(el?.textContent);
                 if (isNaN(rub)) return;
 
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+                hkAppendUsd(el, rub);
             });
         }
 
         function hkUpdateOneItemPricesInCatalogUsed() {
             // the same for table with multiple sellers and for one advert page
-            $('.b-offers-list-line-table__table .offers-list__price').each(function(idx, el) {
-                const selUsd = $(el).find('.hk-usd');
-                if (selUsd.length > 0) return;
+            qsa('.offers-list__price.offers-list__price_primary'
+                + ', .offers-list__price_secondary'
+            ).forEach(el => {
+                const selUsd = qs('.hk-usd', el);
+                if (selUsd) return;
 
-                let rub = $(el).find('span').text();
+                let rub = qs('span', el)?.textContent;
                 rub = hkGetNumber(rub);
                 if (isNaN(rub)) return;
 
-                const usd = hkGetFormattedUsdPrice(rub);
-                $(el).append('<div class="hk-usd">$ ' + usd + '</div>');
+                hkAppendUsd(el, rub);
             });
         }
 
 
         let waitTry = 0;
         const maxWaitTries = 100;
-        const waitUsd = setInterval(function() {
+        let intervalWait = setInterval(() => {
+            //console.log('waitTry', waitTry);
             waitTry++;
             if (waitTry === maxWaitTries) {
-                clearInterval(waitUsd);
+                clearInterval(intervalWait);
+                intervalWait = null;
+                console.log('hkDetectUsd failed');
                 return;
             }
 
             hkDetectUsd();
             if (isNaN(hkUsd)) return; // one more try
-            clearInterval(waitUsd);
+            console.log('hkDetectUsd', hkUsd);
+            clearInterval(intervalWait);
+            intervalWait = null;
 
             // do the job
 
             // baraholka
-            hkUpdateAdvertPriceInBaraholka();
             hkUpdateTablePricesInBaraholka();
+            hkUpdateAdvertPriceInBaraholka();
 
             // catalogue new
             setInterval(hkUpdateTablePricesInCatalog, 1000);
